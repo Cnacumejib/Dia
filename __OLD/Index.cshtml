@@ -1,0 +1,182 @@
+﻿@using Dia.WebPL
+@using Dia.IBLC
+@using Dia.BLL
+@using Dia.Entities
+
+@{
+    Page.Title = "Показания счетчиков";
+    Page.Advise = "Введите текущие показания счетчиков";
+    string accountNumber = Request["AccountNumber"];
+    string agent = Request["agent"];
+    decimal newValue = 0;
+
+    //////////////////////////////
+  /*  if (string.IsNullOrWhiteSpace(accountNumber))
+    {
+        accountNumber = "1009389650";
+    }*/
+
+    if (!string.IsNullOrWhiteSpace(accountNumber))
+    {
+        IList<MyCounter> myCounters = LogicProvider.counterLogic.ReadCounters(accountNumber);
+
+        if (myCounters != null && myCounters.Any())
+        {
+            bool badValue = true;
+
+            if (agent == "add")
+            {
+                //добавляем показания счетчиков
+                badValue = false;
+
+                for (int i = 0; i < myCounters.Count; i++)
+                {
+                    if (//проверка на ликвидность данных
+                        !decimal.TryParse(Request[$"cid{myCounters[i].Id.ToString()}"], out newValue) ||
+                        myCounters[i].PreviousValue > newValue ||
+                        myCounters[i].BaseValue != null ||
+                        myCounters[i].SarValue != null
+                    )
+                    {
+                        badValue = true; //нельзя добавлять: уже есть в базе, или значение меньше
+                        break;
+                    }
+
+                    myCounters[i].NewValue = newValue;
+                }
+
+                if (!badValue)//можно добавлять
+                {
+                    badValue = !LogicProvider.counterLogic.WriteCounters(myCounters); //результат добавления
+                }
+
+                if (badValue)// нельзя добавлять или добавления не произошло
+                {
+                    // СДЕЛАТЬ ТУТ ВЫХОД!!!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
+                    //    Обратитесь по телефону горячей линии <span class="large">39-07-17</span>
+                    <div class="alert">
+                        Не удалось внести новые показания счетчиков.<br />
+                    </div>
+                }
+                //   badValue=false;
+            }
+
+            //  LogicProvider.counterLogic.
+            //  item.PreviousType;
+            //  item.AccountNumber;
+
+            bool mayUpdate = badValue && myCounters[0].SarValue == null && myCounters[0].BaseValue == null;
+
+            <div class="CounterTitle">
+                <span>
+                    счётчик
+                </span>
+                
+            @if (myCounters[0]?.PreviousType == "Контрольное")
+            { 
+                <span>
+                    предыдущее
+                </span>
+            }
+            else
+            {
+                <span>
+                    @(myCounters[0]?.PreviousType.ToLower())
+                </span>
+            }
+                <span>
+                    текущее
+                </span>
+                
+            @if (mayUpdate)//good
+            {/*
+                <span>
+                    расход
+                </span>
+             */
+            }
+            </div>
+
+            
+            foreach (MyCounter item in myCounters)
+            {
+                <div class="CounterRequest">
+                <span class="counterName large">@item.LongName</span>
+                <span class="oldValue">@(item?.PreviousValue)</span>
+                @if (mayUpdate)
+                {
+                //    <span class="consumption">&nbsp;@(item?.PreviousValue-item?.NewValue)</span>
+                                    <input class="newValue" type="text" name="cid@(item.Id)" value="@(item?.NewValue)" placeholder="&gt;= @(item?.PreviousValue)" />
+}
+                else
+                {
+                    <span class="existValue">@(item.NewValue ?? item.BaseValue ?? item.SarValue )</span>
+                }
+            </div>
+            }
+
+            if (!mayUpdate)//good
+            {
+            <div>
+                <br /><br />
+                Данные по счетчикам за текущий период ожидают <br />
+                обработки, если Вам необходимо изменить их <br />
+                свяжитесь по телефону горячей линии <span class="large">39-07-17</span>
+                <br />
+                <div id="backBtn" class="btn" onclick="goHome();">Вернуться в меню</div>
+            </div>
+            }
+            else
+            {
+            <div class="container">
+                <div class="container">
+                    <div id="backBtn" class="btn" onclick="goHome();">Вернуться в меню</div>
+                    <div class="keyboard">
+                        <ul>
+                            <li>0</li>
+                            <li>1</li>
+                            <li>2</li>
+                            <li>3</li>
+                            <li>4</li>
+                        </ul>
+                        <ul>
+                            <li>5</li>
+                            <li>6</li>
+                            <li>7</li>
+                            <li>8</li>
+                            <li>9</li>
+                        </ul>
+                        <ul>
+                            <li>,</li>
+                            <li>←</li>
+                            <li id="clearBtn" class="btn">Очистить</li>
+                        </ul>
+                    </div>
+                    <div id="nextBtn" class="btn inactive" onclick="goAhead();">Передать показания</div>
+                </div>
+            </div>
+            <input type="hidden" name="agent" value="add" />
+            <input type="hidden" name="AccountNumber" value="@accountNumber" />
+            }
+        }
+        else
+        {
+        // счетчики не найдены в базе данных по 
+        /// кнопка backward
+        <div >
+            По лицевому счету @(accountNumber) ИПУ не зарегистрированы<br>
+            <div id="backBtn" class="btn" onclick="goHome();">Вернуться в меню</div>
+        </div >
+        }
+    }
+    else
+    {
+    //в запросе нет номера лицевого счета
+    /// кнопка backward
+    <div>
+        По данному лицевому счету ИПУ не зарегистрированы<br>
+        
+        <div id="backBtn" class="btn" onclick="goHome();">Вернуться в меню</div>
+    </div>
+    }
+}

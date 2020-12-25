@@ -1,0 +1,37 @@
+﻿
+@using System.Collections.Generic;
+@{
+//-------- LAYOUT ---------
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@Page.Title</title>
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/include/common.css" rel="stylesheet" />
+        <link href="~/Content/bootstrap-datepicker3.css" rel="stylesheet" />
+        <link href="~/Content/bootstrap-select.css" rel="stylesheet" />
+
+    @RenderSection("styles", false)
+</head>
+<body>
+    <div class="sdesk">
+        @RenderPage("_MenuPartial.cshtml")
+        @RenderBody()
+    </div>
+    <script src="~/Scripts/jquery-3.1.1.js"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+    <!--script src="~/Scripts/bootstrap-select.js"></!--script-->
+    @RenderSection("scripts", false)
+    <script src="~/Scripts/include/common.js"></script>
+    @if (User.Identity.IsAuthenticated)
+    {
+        <script src="~/Scripts/bootstrap-datepicker.js"></script>
+        <script src="~/Scripts/include/tasks.js"></script>
+        if (User.IsInRole("admin"))
+        {
+            <script src="~/Scripts/include/admin.js"></script>
+        }
+    }
+</body>
+</html>

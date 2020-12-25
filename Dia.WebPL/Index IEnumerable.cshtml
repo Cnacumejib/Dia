@@ -1,0 +1,180 @@
+﻿@using Dia.WebPL
+@using Dia.IBLC
+@using Dia.Entities
+
+@{
+            //    Page.Title = "Занесите показания датчиков";
+            //    Page.Advise = "Введите текущие показания датчиков в таблицу";
+            string userIdString = Request["userId"];
+            int sectionId;
+            string agent = Request["agent"];
+          //  string newRow="</div><div class=\"row\">";
+    float value = 0;
+        Exam exam = new Exam();
+        string sectionIdString = Request["sectionId"];
+    if (!int.TryParse(sectionIdString, out sectionId))
+    {
+
+        sectionId = 1;
+    }
+
+    exam = LogicProvider.diaLogic.GetActionTable(sectionId);
+}
+    <div class="row">
+        <div class="col">
+            Дата измерениий @DateTime.Today.ToShortDateString()
+        </div>
+        <div class="col">
+            Начало замеров
+        </div>
+        <div class="col" id="startTime">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            Отделение: 
+            <select  width="300px">
+                @foreach (Section section in LogicProvider.Sections)
+                {
+                    <option value="@(section.Id)">@(section.Name)</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+        </div>
+    </div>
+
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+
+        </div>
+            @if (exam.Meters != null && exam.Meters.Any())
+            {
+                bool badValue = false;
+
+                if (agent == "add")
+                {
+                    badValue = false;
+                    
+                    foreach (Meter meter in exam.Meters)
+                    {
+                        if (float.TryParse(Request[$"mid{meter.MeterId.ToString()}"], out value))
+                        {
+                            meter.Value = value;
+                        }
+                        else
+                        {
+                            badValue = true;
+                            meter.Value = null;
+                        }
+                    }
+
+                    DateTime FilledFrom;
+                    DateTime FilledTo;
+                    int userId;
+
+                    if (!badValue &&
+                        DateTime.TryParse(Request[$"filledfrom"], out FilledFrom) &&
+                        DateTime.TryParse(Request[$"filledto"], out FilledTo) &&
+                        int.TryParse(userIdString, out userId)
+                        )
+                    {
+                        exam.FilledFrom = FilledFrom;
+                        exam.FilledTo = FilledTo;
+                        exam.ExamUser.Id = userId;
+                        exam.ExamSection.Id = sectionId;
+                        badValue = !LogicProvider.diaLogic.AddExam(exam); //DB result
+                    }
+
+                    if (badValue)// нельзя добавлять или добавления не произошло
+                    {
+                        <div class="alert">
+                            Не удалось внести новые показания датчиков.<br />
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                <div class="alert">
+                    В отделении нет зарегистрированных датчиков.<br />
+                </div>
+            }
+
+    @if (exam?.Meters != null)
+    {
+        int colNumber = 0;
+        string currentLine = string.Empty;
+        <div class="row">
+            <div class="col col-3 border border-dark"></div>
+            @foreach (var device in exam.Titles)
+            {
+            <div class="col col-@(device.Value.Count)">
+                @(device.Key)
+            </div>
+            }
+               
+        </div>
+        <div class=row>
+            <div class="col col-3">Номер клапана полива</div>
+
+            @foreach (var device in exam.Titles)
+            {
+                foreach (string element in device.Value)
+                {
+                <div class="col">
+                    @(element)
+                </div>
+                }
+            }
+
+        </div>
+        <div class=row>
+
+            @foreach (Meter meter in exam.Meters)
+            {
+                if (currentLine != meter.LineName)
+                {
+                    colNumber = 0;
+                    currentLine = meter.LineName;
+                    Html.Raw("</div><div class=\"row\">");
+                    // </div><div class="row">
+                    <div class="col col-3">@(meter.LineName)</div>
+                }
+
+                colNumber++;
+            <div class="col">
+                <input class="newValue" type="text" name="mid@(meter.MeterId)" value="@(meter?.Value)" />
+            </div>
+            }
+            </div>
+
+            }
+
+
+            <div class="row">
+                <div class="col">
+                    <select class="selectpicker">
+                        @foreach (User user in LogicProvider.Users)
+                        {
+                            <option value="@(user.Id)">@(user.Name)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col">
+                    <div id="sendExamBtn" class="btn" onclick="sendExam();">Передать показания</div>
+                </div>
+                <div class="col">
+                    <div id="goReportBtn" class="btn" onclick="goReport();">Посмотреть отчет</div>
+                </div>
+            </div>
+            <input type="hidden" name="agent" value="add" />
+@functions {
+    public string StartNewRow()
+    {
+        return "</div><div class=\"row\">";
+    }
+}

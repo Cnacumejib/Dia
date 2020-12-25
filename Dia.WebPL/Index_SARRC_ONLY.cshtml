@@ -1,0 +1,128 @@
+﻿@using SocZashchita.WebPL;
+@{
+	string login = Request["login"];//?.Substring(0, 12);
+	//login="sz_saratov";
+	if (string.IsNullOrWhiteSpace(login))
+	{
+		<div class="alert alert-danger">Error 404</div>
+    }
+    else
+    {
+        int curPeriod = LogicProvider.Logic.GetCurrentPeriodInt() + 10;
+		@:@(curPeriod)
+        @:
+
+        string[] request_err = new string[] {
+            "без ошибок",
+            "не смогли забрать архив с php сервера",
+            "не смогли прочитать данные их архива",
+            "пустой список ID",
+            "не смогли очистить директорию со старыми файлами",
+            "не смогли записать файл для балк подгрузки",
+            "не смогли подгрузить данные в базу",
+            "не смогли запаковать полученный результат",
+            "не смогли отослать по почте" };
+
+        switch (Request["action"])
+        {
+            case "list":
+                if (LogicProvider.Logic.SendIdList(login))
+                {
+
+                    <div class="alert alert-success">Запрос принят, проверьте почту</div>
+        }
+				else
+				{
+					<div class="alert alert-danger">Запрос обработан c ошибками</div>
+                }
+                break;
+            case "request":
+                List<int> monthes = new List<int>();
+                if (Request["month0"] == "1")
+                {
+                    monthes.Add(0);
+                }
+
+                if (Request["month1"] == "1")
+                {
+                    monthes.Add(1);
+                }
+
+                if (Request["month2"] == "1")
+                {
+                    monthes.Add(2);
+                }
+
+                if (Request["month3"] == "1")
+                {
+                    monthes.Add(3);
+                }
+
+                if (Request["month4"] == "1")
+                {
+                    monthes.Add(4);
+                }
+
+                if (Request["month5"] == "1")
+                {
+                    monthes.Add(5);
+                }
+
+                if (Request["month6"] == "1")
+                {
+                    monthes.Add(6);
+                }
+
+                if (Request["month7"] == "1")
+                {
+                    monthes.Add(7);
+                }
+
+                if (Request["month8"] == "1")
+                {
+                    monthes.Add(8);
+                }
+
+                if (Request["month9"] == "1")
+                {
+                    monthes.Add(9);
+                }
+
+                if (Request["month10"] == "1")
+                {
+                    monthes.Add(10);
+                }
+
+                if (Request["month11"] == "1")
+                {
+                    monthes.Add(11);
+                }
+
+                if (Request["month12"] == "1")
+                {
+                    monthes.Add(12);
+                }
+
+                if (monthes.Count < 1)
+                {
+				<div class="alert alert-danger">Не указан период выборки</div>
+                }
+                else
+                {
+                    int sendError = LogicProvider.Logic.SendBills(login, monthes, curPeriod);
+                    if (sendError == 0)
+                    {
+				        <div class="alert alert-success">Файл запроса обработан без ошибок</div>
+                    }
+                    else
+                    {
+				        <div class="alert alert-danger">Файл запроса обработан c ошибкой № @sendError <br /> @request_err[sendError]</div>
+                    }
+                }
+                break;
+            default:
+				<div class="alert alert-info">Выберите действие </div>
+				break;
+		}
+	}
+}

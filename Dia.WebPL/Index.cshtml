@@ -1,0 +1,222 @@
+﻿@using Dia.WebPL
+@using Dia.IBLC
+@using Dia.Entities
+
+@{
+    int userId;
+    int sectionId;
+    string userIdString = Request["userId"];
+    string agent = Request["agent"];
+    float value = 0;
+    int elementNumber = 0;
+    string sectionIdString = Request["sectionId"];
+    if (!int.TryParse(sectionIdString, out sectionId))
+    {
+
+        sectionId = 1;
+    }
+
+    if (!int.TryParse(userIdString, out userId))
+    {
+
+        userId = -1;
+    }
+
+    DateTime FilledFrom;
+    DateTime FilledTo;
+    string filledTime = Request[$"filledfrom"]?.Substring(0, Math.Min(24,Request[$"filledfrom"].Length));
+    if (!DateTime.TryParse(filledTime, out FilledFrom))
+    {
+        FilledFrom = DateTime.Now;
+    }
+
+    filledTime = Request[$"filledto"]?.Substring(0, Math.Min(24, Request[$"filledto"].Length));
+    if (!DateTime.TryParse(filledTime, out FilledTo))
+    {
+        FilledTo = DateTime.Now;
+    }
+
+    Exam exam = LogicProvider.diaLogic.GetActionTable(sectionId);
+}
+
+<div class="container-fluid header">
+    <div class="row">
+        <div class="col">
+            Дата измерениий @DateTime.Today.ToShortDateString()
+        </div>
+        <div id="filledFromInfo" class="col">   
+            @FilledFrom         
+        </div>
+        <div id="filledToInfo" class="col">
+            @FilledTo
+        </div>
+        <div class="col" id="startTime">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            Отделение:
+            <select  id ="selectSection" name ="sectionId" onchange="changeSection()">
+                @foreach (Section section in LogicProvider.Sections)
+                {
+                    <option value="@(section.Id)"@(sectionId==section.Id?" selected":string.Empty)>@(section.Name)</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+        </div>
+        <div class="col">
+        </div>
+
+    </div>
+</div>
+
+<form action="/" method="post">
+    <div class="container-fluid maintable">
+
+        @if (exam.Meters != null && exam.Meters.Any())
+        {
+            bool badValue = false;
+
+            if (agent == "add")
+            {
+                badValue = false;
+
+                foreach (Meter meter in exam.Meters)
+                {
+                    if (float.TryParse(Request[$"mid{meter.MeterId.ToString()}"]?.Replace('.',','), out value))
+                    {
+                        meter.Value = value;
+                    }
+                    else
+                    {
+                        badValue = true;
+                        meter.Value = null;
+                    }
+                }
+
+                if (!badValue && userId > 0)
+                {
+                    exam.FilledFrom = FilledFrom;
+                    exam.FilledTo = FilledTo;
+                    exam.ExamUser =new User() { Id= userId};
+                    exam.ExamSection = new Section() { Id=sectionId};
+                    badValue = !LogicProvider.diaLogic.AddExam(exam); //DB result
+                }
+
+                if (badValue)// нельзя добавлять или добавления не произошло
+                {
+                    <div class="alert">
+                        Не удалось внести новые показания датчиков.<br />
+                    </div>
+                }
+        }
+        }
+        else
+        {
+            <div class="alert">
+                В отделении нет зарегистрированных датчиков.<br />
+            </div>
+        }
+
+        @if (exam?.Lines != null)
+        {
+            int colNumber = 0;
+            string currentLine = string.Empty;
+            <div class="row">
+                <div class="col-4 border border-dark  d-none d-md-block"></div>
+                <div class="col-1  d-sm-block d-md-none"></div>
+                @foreach (var device in exam.Titles)
+        {
+                    <div class="col-@(device.Value.Count) caption">
+                        @(device.Key)
+                    </div>
+                }
+
+            </div>
+            <div class="row">
+                <div class="col-4  d-none d-md-block">Номер клапана полива</div>
+                <div class="col-1  d-sm-block d-md-none"></div>
+
+                @foreach (var device in exam.Titles)
+        {
+            foreach (string element in device.Value)
+            {
+                elementNumber++;
+                        <div class="col-1 caption">
+                            @(element)
+                        </div>
+                    }
+                }
+
+            </div>
+
+            foreach (Line line in exam.Lines)
+            {
+                colNumber = 0;
+                <div class=row>
+                    <div class="col-1 col-md-4 ">
+                        @(line.Name)
+                    </div>
+                    @foreach (Device device in line.Devices)
+        {
+            foreach (Meter meter in device.Meters)
+            {
+                colNumber++;
+                while (colNumber < meter.ColumnNumber && colNumber < elementNumber)
+                {
+                                <div class="col-1 border-danger">
+                                    ???
+                                </div>
+                                colNumber++;
+                            }
+
+                            if (meter.ColumnNumber == colNumber)
+                            {
+                                <div class="col col-1">
+                                    <input class="form-control newvalue" type="text" id="mid@(meter.MeterId)" name="mid@(meter.MeterId)" value="@(meter?.Value)" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-1 border-danger">
+                                    @(meter?.Value)
+                                </div>
+                            }
+                        }
+                    }
+                </div> @*Закрыли ряд*@
+            }
+        }
+
+    </div> @*Закрыли контейнер*@
+
+    <div class="container-fluid footer">
+        <div class="row">
+            <div class="col-7 col-md-4">
+                <select id="selectUser" name="userId"  class="form-select form-control" aria-label="Default select example">
+                    <option value="0"> - Укажите ответственного - </option>
+                    @foreach (User user in LogicProvider.Users)
+                    {
+                        <option value="@(user.Id)"@(userId == user.Id ? " selected" : string.Empty)>@(user.Name)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-7 col-md-4">
+                <div id="btnSendExam" class="btn inactive" onclick="sendExam();">Передать показания</div>
+            </div>
+            <div class="col-7 col-md-4">
+                <div id="btnGoReport" class="btn" onclick="goReport();">Посмотреть отчет</div>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="agent" value="add" />
+    <input type="hidden" id="filledFrom" name="filledFrom" value="" />
+    <input type="hidden" id="filledTo" name="filledTo" value="" />
+</form>

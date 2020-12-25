@@ -1,0 +1,49 @@
+
+.maintable 
+{
+    margin:15px;
+    width: 98%;
+
+}
+.maintable .row div
+{
+  /*  margin-top:-1px;*/
+    text-align: center;
+    border: 1px solid #dee2e6 !important;
+    padding: 3px;
+}
+
+.caption
+{    
+/* transform: rotate(-90deg);*/
+white-space: nowrap;
+ overflow: hidden;
+text-overflow: ellipsis;
+}
+
+
+select 
+{
+min-width: 180px;
+}
+
+.maintable .row 
+{  
+  border:0;
+}
+
+.maintable div input
+{
+    width: 100%;
+    text-align: center;
+    border:0;
+}
+
+.btn1{
+	background-color: #f2f0f0f7;
+}
+
+.inactive1{
+	background-color: #68c !important;
+	color: #7af !important;
+}

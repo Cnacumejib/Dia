@@ -1,0 +1,100 @@
+﻿@using Dia.WebPL
+@using Dia.IBLC
+@using Dia.Entities
+
+@{
+//    Page.Title = "Занесите показания датчиков";
+//    Page.Advise = "Введите текущие показания датчиков в таблицу";
+    string userIdString = Request["userId"];
+    int sectionId;
+    string agent = Request["agent"];
+    float value = 0;
+    Exam exam = new Exam();
+
+    if (int.TryParse(Request["sectionId"], out sectionId))
+    {
+        exam = LogicProvider.diaLogic.GetActionTable(sectionId);
+
+        if (exam.Meters != null && exam.Meters.Any())
+        {
+            bool badValue = false;
+
+            if (agent == "add")
+            {
+                badValue = false;
+
+                //fill readings
+                // for (int i = 0; i < exam.Meters.Count; i++)
+                foreach (Meter meter in exam.Meters)
+                {
+                    //check for digit
+                    if (float.TryParse(Request[$"cid{meter.MeterId.ToString()}"], out value))
+                    {
+                        meter.Value = value;
+                    }
+                    else
+                    {
+                        badValue = true;
+                        meter.Value = null;
+                    }
+
+                }
+
+                DateTime FilledFrom;
+                DateTime FilledTo;
+                int userId;
+
+                if (!badValue &&
+                    DateTime.TryParse(Request[$"filledfrom"], out FilledFrom) &&
+                    DateTime.TryParse(Request[$"filledto"], out FilledTo) &&
+                    int.TryParse(userIdString, out userId)
+                )
+                {
+                    exam.FilledFrom = FilledFrom;
+                    exam.FilledTo = FilledTo;
+                    exam.ExamUser.Id = userId;
+                    exam.ExamSection.Id = sectionId;
+                    badValue = !LogicProvider.diaLogic.AddExam(exam); //DB result 
+                }
+
+                if (badValue)// нельзя добавлять или добавления не произошло
+                {
+                    <div class="alert">
+                        Не удалось внести новые показания датчиков.<br />
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            <div class="alert">
+                В отделении нет зарегестрированных датчиков.<br />
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert">
+            Не корректный номер отделения.<br />
+        </div>
+    }
+
+    if (exam?.Meters != null)
+    {
+        foreach (Meter meter in exam.Meters)
+        {
+            <div class="CounterRequest">
+                <input class="newValue" type="text" name="cid@(meter.MeterId)" value="@(meter?.Value)" />
+            </div>
+        }
+
+        <div class="container">
+            <div class="container">
+                <div id="backBtn" class="btn" onclick="goHome();">Вернуться в меню</div>
+                <div id="nextBtn" class="btn inactive" onclick="goAhead();">Передать показания</div>
+            </div>
+        </div>
+        <input type="hidden" name="agent" value="add" />
+    }
+}
+}

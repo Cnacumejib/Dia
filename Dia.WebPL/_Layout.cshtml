@@ -9,9 +9,8 @@
     <link href="~/Content/bootstrap-reboot.css" rel="stylesheet" />
 </head>
 <body>
-    
-        @RenderBody()
 
+    @RenderBody()
     <script src="~/Scripts/jquery-3.5.1.js"></script>
     <script src="~/Scripts/bootstrap.js"></script>
     <script src="~/Scripts/bootstrap-select.js"></script>
@@ -21,5 +20,52 @@
     <script src="~/Scripts/popper-utils.js"></script>
     <script src="~/Scripts/include/common.js"></script>
 
-</body>
-</html>
+    @if (Page.Title == "Report")
+    {<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+
+        <script>
+
+            /* Локализация datepicker */
+
+            $.datepicker.regional['ru'] = {
+                closeText: 'Закрыть',
+                prevText: 'Предыдущий',
+                nextText: 'Следующий',
+                currentText: 'Сегодня',
+                monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+                monthNamesShort: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+                dayNames: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
+                dayNamesShort: ['вск', 'пнд', 'втр', 'срд', 'чтв', 'птн', 'сбт'],
+                dayNamesMin: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+                weekHeader: 'Не',
+                dateFormat: 'dd.mm.yy',
+                firstDay: 1,
+                isRTL: false,
+                showMonthAfterYear: false,
+                yearSuffix: ''
+            };
+
+            $.datepicker.setDefaults($.datepicker.regional['ru']);
+            $(function () {
+                $("#datepicker").datepicker({
+                    onSelect: function (date) {
+                        $('#datepicker_value').val(date)
+                        document.forms[0].submit();
+                    }
+                });
+                $("#datepicker").datepicker("setDate", $('#datepicker_value').val());
+            });
+        </script>
+
+        //  <script src="~/Scripts/bootstrap-datepicker.js"></script>
+<script language="JavaScript">
+</script>
+                }
+</body >
+</html >

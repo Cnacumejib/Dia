@@ -17,7 +17,7 @@ namespace Dia.BLL
         public Logic()
         {
         }
-                
+
 
         public Exam GetActionTable(int sectionId)
         {
@@ -34,8 +34,11 @@ namespace Dia.BLL
             foreach (Exam exam in exams)
             {
                 exam.Meters = DataAccessProvider.DBAccessor.GetReadings(exam.ExamId);
-                GetTitles(exam);
-                exam.Lines = GetLines(exam);
+                if (exam.Meters.Any())
+                {
+                    GetTitles(exam);
+                    exam.Lines = GetLines(exam);
+                }
             }
 
             return exams;
@@ -68,8 +71,16 @@ namespace Dia.BLL
             Meter lastMeter = exam.Meters.Last();
             foreach (Meter meter in exam.Meters)
             {
-                if (currentLineName != meter.LineName)
+                if (currentLineName != meter.LineName || meter == lastMeter)
                 {
+                    if (meter == lastMeter)
+                    {
+                        meters.Add(meter);
+                        devices.Add(new Device() { Name = meter.DeviceName, Meters = meters });
+                        lines.Add(new Line() { Name = meter.LineName, Devices = devices });
+                        break;
+                    }
+
                     if (meters.Any())
                     {
                         devices.Add(new Device() { Name = currentDeviceName, Meters = meters });
@@ -104,13 +115,13 @@ namespace Dia.BLL
 
         public bool AddExam(Exam exam)
         {
-            long examId= DataAccessProvider.DBAccessor.AddExam(exam);
-            if(examId ==-1)
+            long examId = DataAccessProvider.DBAccessor.AddExam(exam);
+            if (examId == -1)
             {
                 return false;
             }
 
-            if(DataAccessProvider.DBAccessor.AddReadings(exam.Meters, exam.ExamId))
+            if (DataAccessProvider.DBAccessor.AddReadings(exam.Meters, examId))
             {
                 return true;
             }
